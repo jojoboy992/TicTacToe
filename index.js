@@ -1,9 +1,12 @@
 const cells = document.querySelectorAll('.cell');
 const restartButton = document.getElementById('restart');
 const line = document.querySelector('.line');
+const playerTurnText = document.getElementById('player-turn');
+
 let currentPlayer = 'X';
 let gameState = Array(9).fill(null);
 let gameActive = true;
+let winningCombination = null;
 
 const winningCombinations = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
@@ -12,75 +15,105 @@ const winningCombinations = [
 ];
 
 function handleClick(event) {
-  const cellIndex = event.target.getAttribute('data-index');
+  const index = +event.target.dataset.index;
 
-  if (gameState[cellIndex] || !gameActive) return;
+  if (!gameActive || gameState[index]) return;
 
-  gameState[cellIndex] = currentPlayer;
+  gameState[index] = currentPlayer;
   event.target.textContent = currentPlayer;
 
   if (checkWin()) {
-    drawLine();
-    alert(`Player ${currentPlayer} wins!`);
+    drawLine(winningCombination);
+    setTimeout(() => alert(`Player ${currentPlayer} wins!`), 100);
+    playerTurnText.textContent = `Player ${currentPlayer} wins!`;
     gameActive = false;
   } else if (!gameState.includes(null)) {
+    setTimeout(() => alert(`It's a draw!`), 100);
+    playerTurnText.textContent = `It's a draw!`;
     gameActive = false;
-    alert('It\'s a draw!');
   } else {
     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    playerTurnText.textContent = `Player ${currentPlayer}'s turn`;
   }
 }
+
 
 function checkWin() {
-  return winningCombinations.some(combination => {
-    if (combination.every(index => gameState[index] === currentPlayer)) {
-      winningCombination = combination; // Store the winning combination
+  for (const combo of winningCombinations) {
+    const [a, b, c] = combo;
+    if (
+      gameState[a] &&
+      gameState[a] === gameState[b] &&
+      gameState[a] === gameState[c]
+    ) {
+      winningCombination = combo;
       return true;
     }
-    return false;
-  });
+  }
+  return false;
 }
 
-function drawLine() {
-  const [a, b, c] = winningCombination;
+function drawLine([a, , c]) {
+  if (!line) return;
+
+  const cell = cells[0];
+  const cellSize = cell.offsetWidth;
+  const gap = 5; // your .game-board gap value
+  const board = document.querySelector('.game-board');
+  const centerOffset = cellSize / 2;
+  const padding = cellSize * 0.5; // amount to extend on both sides
+
+  const positions = [a, c].map(index => {
+    const row = Math.floor(index / 3);
+    const col = index % 3;
+    return {
+      x: col * (cellSize + gap) + centerOffset,
+      y: row * (cellSize + gap) + centerOffset
+    };
+  });
+
+  const [start, end] = positions;
+  const deltaX = end.x - start.x;
+  const deltaY = end.y - start.y;
+
+  const angle = Math.atan2(deltaY, deltaX);
+  const length = Math.sqrt(deltaX ** 2 + deltaY ** 2) + padding * 2;
+
+  const adjustedX = start.x - padding * Math.cos(angle);
+  const adjustedY = start.y - padding * Math.sin(angle);
 
   line.style.display = 'block';
-
-  if (a % 3 === 0 && b % 3 === 1 && c % 3 === 2) {
-    // Horizontal line
-    line.style.top = `${50 + Math.floor(a / 3) * 100}px`;
-    line.style.transform = 'rotate(0deg)';
-  } else if (a < 3 && b < 6 && c < 9 && a % 3 === b % 3) {
-    // Vertical line
-    line.style.left = `${50 + (a % 3) * 100}px`;
-    line.style.top = '0';
-    line.style.height = '300px';
-    line.style.width = '5px';
-  } else if (a === 0 && c === 8) {
-    // Diagonal from top-left to bottom-right
-    line.style.top = '0';
-    line.style.left = '0';
-    line.style.width = '350px';
-    line.style.transform = 'rotate(45deg)';
-  } else if (a === 2 && c === 6) {
-    // Diagonal from top-right to bottom-left
-    line.style.top = '0';
-    line.style.right = '0';
-    line.style.width = '350px';
-    line.style.transform = 'rotate(-45deg)';
-  }
+  line.style.width = `${length}px`;
+  line.style.height = '5px';
+  line.style.left = `${adjustedX}px`;
+  line.style.top = `${adjustedY}px`;
+  line.style.transform = `rotate(${angle * (180 / Math.PI)}deg)`;
+  line.style.transformOrigin = '0 50%';
 }
+
+
 
 function restartGame() {
   gameState.fill(null);
-  cells.forEach(cell => cell.textContent = '');
   currentPlayer = 'X';
   gameActive = true;
-  line.style.display = 'none'; // Hide line on restart
-  line.style.width = '300px';
-  line.style.height = '5px';
-  line.style.transform = 'rotate(0deg)';
+  winningCombination = null;
+
+  cells.forEach(cell => cell.textContent = '');
+  if (line) {
+    line.style.display = 'none';
+    line.style.width = '0';
+    line.style.height = '5px';
+    line.style.transform = 'none';
+  }
+  playerTurnText.textContent = `Player X's turn`;
 }
 
-cells.forEach(cell => cell.addEventListener('click', handleClick));
+
+
+cells.forEach((cell, index) => {
+  cell.dataset.index = index;
+  cell.addEventListener('click', handleClick);
+});
+
 restartButton.addEventListener('click', restartGame);
