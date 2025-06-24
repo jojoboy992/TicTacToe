@@ -16,7 +16,7 @@ body {
     grid-template-columns: repeat(3, 100px);
     grid-template-rows: repeat(3, 100px);
     gap: 5px;
-    margin-top: 80px;
+    margin-top: 30px;
   }
     
   .cell {
@@ -31,6 +31,13 @@ body {
     border: 1px solid #333;
   }
   
+  #player-turn {
+  font-size: 1.2rem;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+
   #restart {
     margin-top: 20px;
     padding: 10px 20px;
@@ -39,17 +46,15 @@ body {
     cursor: pointer;
   }
 
-  .line {
-    position: absolute;
-    background-color: #000000;
-    width: 300px;
-    height: 5px;
-    top: 50px;
-    left: 0;
-    transform-origin: center;
-    display: none;
-    z-index: 1;
-  }
+.line {
+  position: absolute;
+  background-color: #000000;
+  height: 5px;
+  display: none;
+  z-index: 1;
+  transform-origin: 0 50%;
+}
+
 
 @media(max-width:350px){
     h1{
